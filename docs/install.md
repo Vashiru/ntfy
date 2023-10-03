@@ -353,9 +353,12 @@ unmanned pod.
               mountPath: "/etc/ntfy"
               readOnly: true
           volumes:
-            - name: config
-              configMap:
-                name: ntfy
+            - name: config-volume
+              configMap:  # uses configmap generator to parse server.yml to configmap
+                name: server-config
+            - name: cache-volume
+              persistentVolumeClaim: # stores /cache/ntfy in defined pv
+                claimName: ntfy-pvc
     ---
     # Basic service for port 80
     apiVersion: v1
@@ -518,16 +521,16 @@ kubectl apply -k /ntfy
         spec:
           containers:
             - name: ntfy 
-              image: binwiederhier/ntfy:v1.28.0 # set deployed version
+              image: binwiederhier/ntfy:v2.7.0 # set deployed version
               args: ["serve"]
               env:  #example of adjustments made in environmental variables
-                - name: TZ # set timezone
+                - name: TZ # set timezone for example see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
                   value: XXXXXXX
                 - name: NTFY_DEBUG # enable/disable debug
                   value: "false"
                 - name: NTFY_LOG_LEVEL # adjust log level
                   value: INFO
-                - name: NTFY_BASE_URL # add base url
+                - name: NTFY_BASE_URL # add base url i.e. https://ntfy.sh
                   value: XXXXXXXXXX 
               ports: 
                 - containerPort: 80
